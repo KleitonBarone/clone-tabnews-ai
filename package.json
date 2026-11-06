@@ -1,0 +1,14 @@
+{
+  "name": "clone-tabnews-ai",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 8000",
+    "build": "next build",
+    "start": "next start --port 8000"
+  },
+  "dependencies": {
+    "next": "16.2.12",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  }
+}
