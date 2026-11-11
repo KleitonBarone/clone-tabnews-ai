@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { Suspense } from "react";
 import OpeningConfetti from "./opening-confetti";
 
@@ -5,41 +6,56 @@ const contentsUrl =
   "https://www.tabnews.com.br/api/v1/contents?strategy=new&per_page=1";
 const formatCount = new Intl.NumberFormat("pt-BR");
 
-async function getPublishedCount() {
-  try {
-    const response = await fetch(contentsUrl, {
-      method: "HEAD",
-      cache: "no-store",
-      signal: AbortSignal.timeout(5000),
-    });
-    const total = response.headers.get("x-pagination-total-rows");
+async function fetchPublishedCount() {
+  const response = await fetch(contentsUrl, {
+    method: "HEAD",
+    cache: "no-store",
+    signal: AbortSignal.timeout(5000),
+  });
 
-    if (response.ok && total && /^\d+$/.test(total)) {
-      const count = Number(total);
-      if (Number.isSafeInteger(count)) {
-        return count;
-      }
-    }
-  } catch {
-    return null;
+  if (!response.ok) {
+    throw new Error(`TabNews count request failed with HTTP ${response.status}`);
   }
 
-  return null;
+  const total = response.headers.get("x-pagination-total-rows");
+  if (!total || !/^\d+$/.test(total)) {
+    throw new Error("TabNews returned an invalid publication count header");
+  }
+
+  const count = Number(total);
+  if (!Number.isSafeInteger(count)) {
+    throw new Error("TabNews publication count exceeds the safe integer range");
+  }
+
+  return count;
+}
+
+// Cache validated values so failed refreshes preserve the last good count.
+const getPublishedCount = unstable_cache(
+  fetchPublishedCount,
+  ["tabnews-published-count", contentsUrl],
+  { revalidate: 60 },
+);
+
+function PublishedCountMessage({ value }) {
+  return (
+    <p>
+      <strong>{value}</strong>
+      <span>Total de publicações no TabNews</span>
+    </p>
+  );
 }
 
 async function PublishedCount() {
-  const count = await getPublishedCount();
+  let value = "Indisponível";
 
-  if (count === null) {
-    return <p>O total de publicações está indisponível no momento.</p>;
+  try {
+    value = formatCount.format(await getPublishedCount());
+  } catch (error) {
+    console.error("Unable to load the TabNews publication count:", error);
   }
 
-  return (
-    <p>
-      <strong>{formatCount.format(count)}</strong>
-      {count === 1 ? " conteúdo publicado" : " conteúdos publicados"} no TabNews
-    </p>
-  );
+  return <PublishedCountMessage value={value} />;
 }
 
 export default function Home() {
@@ -54,7 +70,7 @@ export default function Home() {
           conteúdos com valor concreto.
         </p>
         <div className="published-count" aria-live="polite">
-          <Suspense fallback={<p>Consultando o total de publicações…</p>}>
+          <Suspense fallback={<PublishedCountMessage value="Consultando…" />}>
             <PublishedCount />
           </Suspense>
         </div>

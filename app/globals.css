@@ -50,6 +50,8 @@ main {
 }
 
 .published-count p {
+  /* Keep all counter states the same height when the label wraps. */
+  display: grid;
   margin: 0;
 }
 
