@@ -1,6 +1,7 @@
 {
   "name": "clone-tabnews-ai",
   "private": true,
+  "packageManager": "pnpm@10.34.9",
   "scripts": {
     "dev": "next dev --port 8000",
     "build": "next build",
