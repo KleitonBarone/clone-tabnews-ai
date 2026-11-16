@@ -38,7 +38,11 @@ export default function OpeningConfetti() {
     window.addEventListener("resize", measureViewport);
     motionPreference.addEventListener("change", stopOnReducedMotion);
 
+    // Bound the whole animation, including particles still falling after emission.
+    const timeout = window.setTimeout(() => setComplete(true), 4000);
+
     return () => {
+      window.clearTimeout(timeout);
       window.removeEventListener("resize", measureViewport);
       motionPreference.removeEventListener("change", stopOnReducedMotion);
     };
