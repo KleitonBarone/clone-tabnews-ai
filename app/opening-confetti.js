@@ -1,7 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import Confetti from "react-confetti";
+
+const Confetti = dynamic(() => import("react-confetti"), { ssr: false });
 
 const colors = ["#167657", "#39a77a", "#eca83c", "#b163db", "#4a8ee7"];
 
@@ -10,11 +12,19 @@ export default function OpeningConfetti() {
   const [complete, setComplete] = useState(false);
 
   useEffect(() => {
-    if (
-      complete ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
+    if (complete) {
       return;
+    }
+
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (motionPreference.matches) {
+      return;
+    }
+
+    function stopOnReducedMotion(event) {
+      if (event.matches) {
+        setComplete(true);
+      }
     }
 
     function measureViewport() {
@@ -26,7 +36,12 @@ export default function OpeningConfetti() {
 
     measureViewport();
     window.addEventListener("resize", measureViewport);
-    return () => window.removeEventListener("resize", measureViewport);
+    motionPreference.addEventListener("change", stopOnReducedMotion);
+
+    return () => {
+      window.removeEventListener("resize", measureViewport);
+      motionPreference.removeEventListener("change", stopOnReducedMotion);
+    };
   }, [complete]);
 
   if (!viewport || complete) {
