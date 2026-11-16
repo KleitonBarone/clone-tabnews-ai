@@ -59,6 +59,7 @@ export default function OpeningConfetti() {
       style={{ position: "fixed" }}
       aria-hidden="true"
       colors={colors}
+      gravity={0.6}
       numberOfPieces={120}
       recycle={false}
       tweenDuration={600}
